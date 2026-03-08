@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 文字冒险 - 今日的选项</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+        .game-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 30px;
+        }
+        .story {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            min-height: 150px;
+        }
+        .story-text {
+            color: #fff;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+        .story-image {
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 18px 25px;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        .option-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102,126,234,0.4);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-label {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+        }
+        .stat-value {
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-card">
+            <h1>🌟 今日的选项</h1>
+            <p class="subtitle">你的选择将改变故事的走向</p>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress" style="width: 10%"></div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">章节</div>
+                    <div class="stat-value" id="chapter">1</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">好感度</div>
+                    <div class="stat-value" id="affection">50</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">金币</div>
+                    <div class="stat-value" id="gold">100</div>
+                </div>
+            </div>
+            
+            <div class="story">
+                <div class="story-image" id="sceneImage">🌅</div>
+                <div class="story-text" id="storyText">
+                    今天的阳光格外温暖。你醒来发现自己在一家陌生的咖啡馆里...
+                    昨夜发生了什么？你完全想不起来了。
+                    
+                    突然，一个神秘人走到你面前，递给你一张纸条...
+                </div>
+            </div>
+            
+            <div class="options" id="options">
+                <button class="option-btn" onclick="makeChoice(1)">📖 接过纸条，看看上面写着什么</button>
+                <button class="option-btn" onclick="makeChoice(2)">❓ 询问神秘人的身份</button>
+                <button class="option-btn" onclick="makeChoice(3)">🚪 直接离开咖啡馆</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameData = {
+            chapter: 1,
+            affection: 50,
+            gold: 100,
+            currentScene: 'start'
+        };
+        
+        const scenes = {
+            start: {
+                text: "今天的阳光格外温暖。你醒来发现自己在一家陌生的咖啡馆里... 昨夜发生了什么？你完全想不起来了。突然，一个神秘人走到你面前，递给你一张纸条...",
+                image: "🌅",
+                options: [
+                    { text: "📖 接过纸条，看看上面写着什么", next: "read_note" },
+                    { text: "❓ 询问神秘人的身份", next: "ask_identity" },
+                    { text: "🚪 直接离开咖啡馆", next: "leave" }
+                ]
+            },
+            read_note: {
+                text: "纸条上写着：'想知道真相，今晚9点，废弃工厂见。' 你感到一阵寒意... 这到底是怎么回事？",
+                image: "📝",
+                options: [
+                    { text: "🤔 前往废弃工厂", next: "factory", effect: { affection: -10, gold: 0 } },
+                    { text: "🕵️ 先去调查一下这个地方", next: "investigate", effect: { affection: 10, gold: -20 } }
+                ]
+            },
+            ask_identity: {
+                text: "神秘人笑了笑：'你不需要知道我是谁。只需要知道，我能帮你找回失去的记忆...' 说完便转身离去。",
+                image: "🎭",
+                options: [
+                    { text: "追上他问个清楚", next: "chase", effect: { affection: 20, gold: 0 } },
+                    { text: "算了，先离开这里", next: "leave", effect: { affection: 0, gold: 0 } }
+                ]
+            },
+            leave: {
+                text: "你走出咖啡馆，外面的世界看起来既熟悉又陌生。你漫无目的地走在街上，不知道该去哪里...",
+                image: "🏃",
+                options: [
+                    { text: "回家看看", next: "home", effect: { affection: 10, gold: 0 } },
+                    { text: "去警局报案", next: "police", effect: { affection: -5, gold: 0 } }
+                ]
+            }
+        };
+        
+        function makeChoice(choiceIndex) {
+            const scene = scenes[gameData.currentScene];
+            const choice = scene.options[choiceIndex - 1];
+            
+            if (choice.effect) {
+                gameData.affection = Math.max(0, Math.min(100, gameData.affection + (choice.effect.affection || 0)));
+                gameData.gold = Math.max(0, gameData.gold + (choice.effect.gold || 0));
+            }
+            
+            gameData.chapter++;
+            gameData.currentScene = choice.next;
+            
+            if (scenes[choice.next]) {
+                updateScene(scenes[choice.next]);
+            } else {
+                // 章节结束
+                document.getElementById('storyText').textContent = "故事未完待续... 下次更新再见！";
+                document.getElementById('options').innerHTML = '<button class="option-btn" onclick="restart()">🔄 重新开始</button>';
+            }
+        }
+        
+        function updateScene(scene) {
+            document.getElementById('storyText').textContent = scene.text;
+            document.getElementById('sceneImage').textContent = scene.image;
+            document.getElementById('chapter').textContent = gameData.chapter;
+            document.getElementById('affection').textContent = gameData.affection;
+            document.getElementById('gold').textContent = gameData.gold;
+            document.getElementById('progress').style.width = Math.min(100, gameData.chapter * 10) + '%';
+            
+            const optionsHtml = scene.options.map((opt, i) => 
+                `<button class="option-btn" onclick="makeChoice(${i+1})">${opt.text}</button>`
+            ).join('');
+            document.getElementById('options').innerHTML = optionsHtml;
+        }
+        
+        function restart() {
+            gameData.chapter = 1;
+            gameData.affection = 50;
+            gameData.gold = 100;
+            gameData.currentScene = 'start';
+            updateScene(scenes.start);
+        }
+    </script>
+</body>
+</html>

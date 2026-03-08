@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Mini Games - 游戏合集</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        h1 {
+            color: #fff;
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #00ff88, #00b4db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.6);
+            font-size: 1.1rem;
+        }
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        .game-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+        }
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,255,136,0.2);
+            border-color: #00ff88;
+        }
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        .game-name {
+            color: #fff;
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+        }
+        .game-desc {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .game-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            padding: 5px 12px;
+            background: rgba(0,255,136,0.2);
+            border-radius: 15px;
+            color: #00ff88;
+            font-size: 0.8rem;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            color: rgba(255,255,255,0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 Mini Games</h1>
+            <p class="subtitle">精选好玩的HTML5小游戏合集</p>
+        </header>
+        
+        <div class="games-grid">
+            <a href="text-adventure/index.html" class="game-card" target="_blank">
+                <div class="game-icon">📖</div>
+                <div class="game-name">文字冒险 - 今日的选项</div>
+                <div class="game-desc">剧情向文字冒险游戏，你的选择将改变故事走向。多结局、好感度系统。</div>
+                <div class="game-tags">
+                    <span class="tag">文字冒险</span>
+                    <span class="tag">多结局</span>
+                </div>
+            </a>
+            
+            <a href="ai-companion/index.html" class="game-card" target="_blank">
+                <div class="game-icon">💕</div>
+                <div class="game-name">AI恋人 - 小狼狗</div>
+                <div class="game-desc">AI聊天陪伴游戏，智能回复、约会送礼，感受虚拟恋人的温暖。</div>
+                <div class="game-tags">
+                    <span class="tag">AI聊天</span>
+                    <span class="tag">陪伴</span>
+                </div>
+            </a>
+            
+            <a href="brain-hole/index.html" class="game-card" target="_blank">
+                <div class="game-icon">🧠</div>
+                <div class="game-name">脑洞大开 - 百万富翁</div>
+                <div class="game-desc">脑洞知识问答游戏，答对12题平分100万奖金！AI相关问题为主。</div>
+                <div class="game-tags">
+                    <span class="tag">问答</span>
+                    <span class="tag">益智</span>
+                </div>
+            </a>
+            
+            <a href="breakout/index.html" class="game-card" target="_blank">
+                <div class="game-icon">👾</div>
+                <div class="game-name">AI打砖块</div>
+                <div class="game-desc">经典街机打砖块游戏，支持AI辅助模式。回忆童年时光！</div>
+                <div class="game-tags">
+                    <span class="tag">街机</span>
+                    <span class="tag">AI辅助</span>
+                </div>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p>持续更新中... 🚀</p>
+        </div>
+    </div>
+</body>
+</html>

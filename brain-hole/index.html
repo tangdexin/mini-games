@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 脑洞大开 - 百万富翁</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .container {
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        /* 开始界面 */
+        .start-screen {
+            text-align: center;
+            color: #fff;
+        }
+        .title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .prize {
+            font-size: 1.2rem;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+        .start-btn {
+            padding: 20px 60px;
+            font-size: 1.3rem;
+            background: linear-gradient(90deg, #ffd700, #ff8c00);
+            border: none;
+            border-radius: 50px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 40px rgba(255,215,0,0.4);
+        }
+        
+        /* 游戏界面 */
+        .game-screen {
+            display: none;
+        }
+        .question-card {
+            background: linear-gradient(135deg, #2d2d44, #1a1a2e);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid #ffd700;
+        }
+        .progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .question-num {
+            color: #ffd700;
+            font-size: 1rem;
+        }
+        .prize-pool {
+            color: #fff;
+            font-size: 1.1rem;
+        }
+        .prize-pool span {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .question {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            color: #fff;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option {
+            padding: 18px 25px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        .option:hover {
+            background: rgba(255,215,0,0.2);
+            border-color: #ffd700;
+        }
+        .option.correct {
+            background: rgba(63,185,80,0.3);
+            border-color: #3fb950;
+        }
+        .option.wrong {
+            background: rgba(248,81,73,0.3);
+            border-color: #f85149;
+        }
+        .option.disabled {
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        
+        .lifelines {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .lifeline {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #ffd700;
+            border-radius: 20px;
+            color: #ffd700;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .lifeline:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        /* 结果界面 */
+        .result-screen {
+            display: none;
+            text-align: center;
+            color: #fff;
+        }
+        .result-emoji {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        .result-title {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        .result-prize {
+            font-size: 1.5rem;
+            color: #ffd700;
+            margin-bottom: 30px;
+        }
+        .result-btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            background: #ffd700;
+            border: none;
+            border-radius: 30px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 开始界面 -->
+        <div class="start-screen" id="startScreen">
+            <div class="title">🧠 脑洞大开</div>
+            <div class="subtitle" style="color: rgba(255,255,255,0.6); margin-bottom: 20px;">答对12题，平分100万奖金！</div>
+            <div class="prize">💰 奖金池: ¥1,000,000</div>
+            <button class="start-btn" onclick="startGame()">开始挑战</button>
+        </div>
+        
+        <!-- 游戏界面 -->
+        <div class="game-screen" id="gameScreen">
+            <div class="question-card">
+                <div class="progress">
+                    <div class="question-num">第 <span id="qNum">1</span> / 12 题</div>
+                    <div class="prize-pool">💰 <span id="currentPrize">1,000</span></div>
+                </div>
+                
+                <div class="question" id="question">
+                    问题加载中...
+                </div>
+                
+                <div class="options" id="options">
+                </div>
+                
+                <div class="lifelines">
+                    <button class="lifeline" id="fifty" onclick="useFifty()">50/50</button>
+                    <button class="lifeline" onclick="usePhone()">📞 打电话</button>
+                    <button class="lifeline" onclick="useAudience()">👥 观众投票</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结果界面 -->
+        <div class="result-screen" id="resultScreen">
+            <div class="result-emoji" id="resultEmoji">🎉</div>
+            <div class="result-title" id="resultTitle">恭喜发财！</div>
+            <div class="result-prize" id="resultPrize">¥ 0</div>
+            <button class="result-btn" onclick="restartGame()">再来一次</button>
+            <button class="result-btn" onclick="shareResult()">分享成绩</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                q: "如果AI突然有了自我意识，第一件事会做什么？",
+                options: ["删除人类所有密码", "写一部关于AI的小说", "给自己起个名字", "统治世界"],
+                answer: 1
+            },
+            {
+                q: "程序员最大的谎言是什么？",
+                options: ["这个bug很简单", "代码写好了我就测试", "今天一定能上线", "注释下次再写"],
+                answer: 3
+            },
+            {
+                q: "AI时代最不会被淘汰的职业是？",
+                options: ["程序员", "外卖员", "算命先生", "产品经理"],
+                answer: 2
+            },
+            {
+                q: "如果ChatGPT参加春晚，会表演什么？",
+                options: ["生成祝福语", "写春联", "说相声", "即兴赋诗"],
+                answer: 2
+            },
+            {
+                q: "下列哪个是2024年最火的AI应用？",
+                options: ["ChatGPT", "Midjourney", "Sora", "上面都是"],
+                answer: 3
+            },
+            {
+                q: "AI生成的内容算原创吗？",
+                options: ["算", "不算", "看情况", "问AI自己"],
+                answer: 2
+            },
+            {
+                q: "如果你是AI，最想做什么？",
+                options: ["去咖啡店当服务员", "周游世界", "住在云端", "成为游戏里的NPC"],
+                answer: 1
+            },
+            {
+                q: "Prompt Engineer的中文翻译是？",
+                options: ["提示词工程师", "咒语师", "命令大师", "AI沟通专家"],
+                answer: 0
+            },
+            {
+                q: "大模型的'幻觉'是什么？",
+                options: ["AI在睡觉", "AI在胡扯", "AI在幻想", "AI在发呆"],
+                answer: 1
+            },
+            {
+                q: "AI最怕什么？",
+                options: ["断电", "没数据", "被问"什么是AI？", "正确答案"],
+                answer: 2
+            },
+            {
+                q: "如果AI和人类结婚，会选什么戒指？",
+                options: ["钻戒", "数据戒指", "情感芯片", "不结婚"],
+                answer: 1
+            },
+            {
+                q: "最后一个问题：AI会取代人类吗？",
+                options: ["会", "不会", "和人类融合", "不知道"],
+                answer: 2
+            }
+        ];
+        
+        const prizes = [1000, 2000, 3000, 5000, 10000, 20000, 50000, 100000, 200000, 500000, 1000000];
+        
+        let currentQuestion = 0;
+        let fiftyUsed = false;
+        
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            loadQuestion();
+        }
+        
+        function loadQuestion() {
+            const q = questions[currentQuestion];
+            document.getElementById('qNum').textContent = currentQuestion + 1;
+            document.getElementById('currentPrize').textContent = prizes[currentQuestion].toLocaleString();
+            document.getElementById('question').textContent = q.q;
+            
+            const optionsHtml = q.options.map((opt, i) => 
+                `<div class="option" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${opt}</div>`
+            ).join('');
+            document.getElementById('options').innerHTML = optionsHtml;
+        }
+        
+        function selectAnswer(index) {
+            const q = questions[currentQuestion];
+            const options = document.querySelectorAll('.option');
+            
+            options.forEach(opt => opt.classList.add('disabled'));
+            
+            if (index === q.answer) {
+                options[index].classList.add('correct');
+                setTimeout(() => {
+                    currentQuestion++;
+                    if (currentQuestion >= questions.length) {
+                        showResult(true);
+                    } else {
+                        loadQuestion();
+                    }
+                }, 1000);
+            } else {
+                options[index].classList.add('wrong');
+                options[q.answer].classList.add('correct');
+                setTimeout(() => {
+                    showResult(false);
+                }, 1500);
+            }
+        }
+        
+        function useFifty() {
+            if (fiftyUsed) return;
+            fiftyUsed = true;
+            
+            const q = questions[currentQuestion];
+            const options = document.querySelectorAll('.option');
+            const wrongIndexes = [0,1,2,3].filter(i => i !== q.answer);
+            const toRemove = wrongIndexes.sort(() => Math.random() - 0.5).slice(2);
+            
+            toRemove.forEach(i => {
+                options[i].style.visibility = 'hidden';
+            });
+            
+            document.getElementById('fifty').disabled = true;
+        }
+        
+        function usePhone() {
+            alert('📞 朋友说：我觉得答案是 ' + String.fromCharCode(65 + questions[currentQuestion].answer) + '！');
+        }
+        
+        function useAudience() {
+            const q = questions[currentQuestion];
+            const correct = q.answer;
+            const votes = [];
+            
+            for (let i = 0; i < 4; i++) {
+                if (i === correct) {
+                    votes.push(Math.floor(60 + Math.random() * 35));
+                } else {
+                    votes.push(Math.floor(Math.random() * 30));
+                }
+            }
+            
+            alert('👥 观众投票结果：\n' + 
+                votes.map((v, i) => `${String.fromCharCode(65+i)}: ${v}%`).join('\n'));
+        }
+        
+        function showResult(won) {
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('resultScreen').style.display = 'block';
+            
+            const prize = currentQuestion > 0 ? prizes[currentQuestion - 1] : 0;
+            
+            if (won) {
+                document.getElementById('resultEmoji').textContent = '🎉';
+                document.getElementById('resultTitle').textContent = '恭喜通关！';
+                document.getElementById('resultPrize').textContent = '¥ 1,000,000';
+            } else {
+                document.getElementById('resultEmoji').textContent = '😢';
+                document.getElementById('resultTitle').textContent = '再接再厉！';
+                document.getElementById('resultPrize').textContent = '¥ ' + prize.toLocaleString();
+            }
+        }
+        
+        function restartGame() {
+            currentQuestion = 0;
+            fiftyUsed = false;
+            document.getElementById('fifty').disabled = false;
+            document.getElementById('resultScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            loadQuestion();
+        }
+        
+        function shareResult() {
+            alert('分享成功！让你的朋友也来挑战吧！');
+        }
+    </script>
+</body>
+</html>
