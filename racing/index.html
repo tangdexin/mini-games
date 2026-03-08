@@ -2,41 +2,47 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🏎️ 极速赛车</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
         body {
             background: #1a1a2e;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
             font-family: -apple-system, sans-serif;
-            overflow: hidden;
         }
+        
+        .ui {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 25px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .score { color: #00ff88; }
+        .speed { color: #ffd700; }
         
         canvas {
             background: #333;
             border-radius: 10px;
             box-shadow: 0 0 30px rgba(255,107,107,0.3);
+            max-width: 95vw;
         }
-        
-        .ui {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 30px;
-            color: #fff;
-            font-size: 20px;
-            font-weight: bold;
-        }
-        
-        .score { color: #00ff88; }
-        .speed { color: #ffd700; }
         
         .start {
             position: absolute;
@@ -44,14 +50,53 @@
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 20px 50px;
-            font-size: 24px;
+            font-size: 22px;
             background: linear-gradient(135deg, #ff6b6b, #ffa500);
             border: none;
             border-radius: 30px;
             color: #fff;
             cursor: pointer;
-            z-index: 10;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(255,107,107,0.4);
         }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .ctrl-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .ctrl-btn:active { background: rgba(255,255,255,0.4); }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .game-over.show { display: flex; }
+        .game-over h2 { color: #ff6b6b; font-size: 36px; margin-bottom: 20px; }
+        .game-over p { color: #fff; font-size: 24px; margin-bottom: 30px; }
     </style>
 </head>
 <body>
@@ -59,56 +104,77 @@
         <div>分数: <span class="score" id="score">0</span></div>
         <div>速度: <span class="speed" id="speed">0</span> km/h</div>
     </div>
-    <canvas id="game" width="400" height="600"></canvas>
-    <button class="start" onclick="startGame()">开始游戏</button>
+    <canvas id="game" width="350" height="550"></canvas>
+    <button class="start" id="startBtn" onclick="startGame()">🏁 开始游戏</button>
+    
+    <div class="game-over" id="gameOver">
+        <h2>游戏结束!</h2>
+        <p>得分: <span id="finalScore">0</span></p>
+        <button class="start" onclick="startGame()">🔄 再来一次</button>
+    </div>
+    
+    <div class="controls">
+        <button class="ctrl-btn" onmousedown="moveLeft()" ontouchstart="moveLeft()">⬅️</button>
+        <button class="ctrl-btn" onmousedown="moveRight()" ontouchstart="moveRight()">➡️</button>
+    </div>
 
     <script>
-        const c = document.getElementById('game');
-        const ctx = c.getContext('2d');
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
         
-        let player, obstacles, score, speed, gameRunning;
-        const road = { x: 50, w: 300 };
+        const road = { x: 30, w: 290 };
+        let player, obstacles, score, speed, gameRunning, movingLeft, movingRight;
         
         function init() {
-            player = { x: 175, y: 500, w: 50, h: 80 };
+            player = { x: 135, y: 450, w: 50, h: 80 };
             obstacles = [];
             score = 0;
             speed = 0;
-            gameRunning = true;
-            document.querySelector('.start').style.display = 'none';
+            gameRunning = false;
+            movingLeft = false;
+            movingRight = false;
         }
         
         function drawCar(x, y, color, isPlayer) {
-            ctx.fillStyle = color;
             // 车身
+            ctx.fillStyle = color;
             ctx.fillRect(x + 5, y + 20, 40, 50);
             // 车顶
-            ctx.fillRect(x + 10, y + 5, 30, 20);
+            ctx.fillRect(x + 10, y + 5, 30, 18);
+            // 车窗
+            ctx.fillStyle = isPlayer ? '#88ff88' : '#ff8888';
+            ctx.fillRect(x + 12, y + 8, 26, 12);
             // 尾灯
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(x + 5, y + 65, 8, 10);
             ctx.fillRect(x + 37, y + 65, 8, 10);
             // 车灯
             ctx.fillStyle = '#ffff00';
-            ctx.fillRect(x + 8, y + 25, 8, 5);
-            ctx.fillRect(x + 34, y + 25, 8, 5);
+            ctx.fillRect(x + 8, y + 25, 6, 5);
+            ctx.fillRect(x + 36, y + 25, 6, 5);
         }
         
         function draw() {
-            ctx.fillStyle = '#333';
-            ctx.fillRect(0, 0, 400, 600);
+            // 背景
+            ctx.fillStyle = '#222';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // 道路
-            ctx.fillStyle = '#444';
-            ctx.fillRect(road.x, 0, road.w, 600);
+            ctx.fillStyle = '#333';
+            ctx.fillRect(road.x, 0, road.w, canvas.height);
             
-            // 道路线
+            // 道路边线
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(road.x - 3, 0, 3, canvas.height);
+            ctx.fillRect(road.x + road.w, 0, 3, canvas.height);
+            
+            // 道路中线
             ctx.strokeStyle = '#fff';
-            ctx.setLineDash([30, 20]);
-            ctx.lineDashOffset = -Date.now() * speed * 0.01;
+            ctx.setLineDash([25, 15]);
+            ctx.lineDashOffset = -Date.now() * speed * 0.02;
             ctx.beginPath();
             ctx.moveTo(road.x + road.w/2, 0);
-            ctx.lineTo(road.x + road.w/2, 600);
+            ctx.lineTo(road.x + road.w/2, canvas.height);
             ctx.stroke();
             ctx.setLineDash([]);
             
@@ -120,22 +186,29 @@
             // 玩家
             drawCar(player.x, player.y, '#00ff88', true);
             
-            // 分数
+            // UI
             document.getElementById('score').textContent = score;
-            document.getElementById('speed').textContent = speed;
+            document.getElementById('speed').textContent = Math.floor(speed);
         }
         
         function update() {
             if (!gameRunning) return;
             
-            speed = Math.min(200, 100 + score * 0.5);
+            // 玩家移动
+            if (movingLeft) player.x -= 8;
+            if (movingRight) player.x += 8;
+            player.x = Math.max(road.x, Math.min(road.x + road.w - player.w, player.x));
+            
+            // 速度递增
+            speed = Math.min(200, 80 + score * 0.3);
             
             // 生成障碍物
-            if (Math.random() < 0.02 + score * 0.0001) {
+            const spawnRate = 0.015 + score * 0.0001;
+            if (Math.random() < spawnRate) {
                 obstacles.push({
                     x: road.x + Math.random() * (road.w - 50),
                     y: -80,
-                    v: speed * 0.1
+                    v: speed * 0.08 + 2
                 });
             }
             
@@ -143,17 +216,18 @@
             obstacles.forEach(o => o.y += o.v);
             
             // 移除超出屏幕的障碍物
-            obstacles = obstacles.filter(o => o.y < 650);
+            obstacles = obstacles.filter(o => o.y < canvas.height + 100);
             
             // 碰撞检测
-            obstacles.forEach(o => {
+            for (const o of obstacles) {
                 if (player.x < o.x + 50 &&
                     player.x + 50 > o.x &&
                     player.y < o.y + 80 &&
                     player.y + 80 > o.y) {
                     gameOver();
+                    return;
                 }
-            });
+            }
             
             // 得分
             score++;
@@ -161,9 +235,49 @@
         
         function gameOver() {
             gameRunning = false;
-            alert('游戏结束！得分: ' + score);
-            document.querySelector('.start').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').classList.add('show');
         }
+        
+        function startGame() {
+            init();
+            gameRunning = true;
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('gameOver').classList.remove('show');
+        }
+        
+        function moveLeft() { movingLeft = true; }
+        function moveRight() { movingRight = true; }
+        function stopMove() { movingLeft = false; movingRight = false; }
+        
+        // 键盘控制
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') moveLeft();
+            if (e.key === 'ArrowRight') moveRight();
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') stopMove();
+        });
+        
+        // 触摸控制
+        let touchStartX;
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            touchStartX = e.touches[0].clientX - rect.left;
+        });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (!gameRunning) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.touches[0].clientX - rect.left;
+            const diff = x - touchStartX;
+            if (Math.abs(diff) > 10) {
+                player.x += diff * 0.1;
+                player.x = Math.max(road.x, Math.min(road.x + road.w - player.w, player.x));
+                touchStartX = x;
+            }
+        });
         
         function loop() {
             update();
@@ -171,17 +285,7 @@
             requestAnimationFrame(loop);
         }
         
-        // 键盘控制
-        document.addEventListener('keydown', e => {
-            if (e.key === 'ArrowLeft') player.x -= 20;
-            if (e.key === 'ArrowRight') player.x += 20;
-            player.x = Math.max(road.x, Math.min(road.x + road.w - 50, player.x));
-        });
-        
-        function startGame() {
-            init();
-        }
-        
+        init();
         loop();
     </script>
 </body>

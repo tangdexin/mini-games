@@ -30,38 +30,42 @@
         
         #board {
             display: grid;
-            grid-template-columns: repeat(8, 50px);
-            gap: 5px;
+            grid-template-columns: repeat(8, 45px);
+            gap: 4px;
             background: rgba(255,255,255,0.1);
             padding: 10px;
             border-radius: 10px;
         }
         
         .cell {
-            width: 50px;
-            height: 50px;
-            background: rgba(255,255,255,0.1);
+            width: 45px;
+            height: 45px;
+            background: rgba(255,255,255,0.15);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 24px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
+            user-select: none;
         }
         
-        .cell:hover { transform: scale(1.1); }
-        .cell.selected { background: rgba(0,255,136,0.5); transform: scale(1.1); }
+        .cell:hover { transform: scale(1.1); background: rgba(255,255,255,0.25); }
+        .cell.selected { background: rgba(0,255,136,0.5); transform: scale(1.1); box-shadow: 0 0 15px rgba(0,255,136,0.5); }
         .cell.empty { background: transparent; cursor: default; }
-        .cell.matched { animation: match 0.3s forwards; }
+        
+        .cell.matched { 
+            animation: match 0.3s forwards; 
+        }
         
         @keyframes match {
             0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
+            50% { transform: scale(1.3); opacity: 0.8; }
             100% { transform: scale(0); opacity: 0; }
         }
         
-        button {
+        .btn {
             margin-top: 20px;
             padding: 12px 30px;
             background: linear-gradient(135deg, #00ff88, #00b4db);
@@ -71,6 +75,15 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .btn:hover { transform: scale(1.05); }
+        
+        .tips {
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -79,21 +92,31 @@
     <div class="info">
         <div>剩余: <span id="left">0</span></div>
         <div>用时: <span id="time">0</span>秒</div>
+        <div>得分: <span id="score">0</span></div>
     </div>
     <div id="board"></div>
-    <button onclick="initGame()">重新开始</button>
+    <button class="btn" onclick="initGame()">🔄 重新开始</button>
+    <p class="tips">选择两个相同的方块即可消除</p>
 
     <script>
-        const emojis = ['🍎','🍊','🍋','🍇','🍉','🍓','🍑','🥝','🍒','🥑'];
-        let board = [], selected = null, left, startTime;
+        const emojis = ['🍎','🍊','🍋','🍇','🍉','🍓','🍑','🥝'];
+        let board = [];
+        let selected = null;
+        let left, score, startTime;
         
         function initGame() {
+            // 8x8 = 64个位置，32对
             let pairs = [];
             for (let i = 0; i < 32; i++) {
-                pairs.push(emojis[i % 10]);
-                pairs.push(emojis[i % 10]);
+                const emoji = emojis[i % 8];
+                pairs.push(emoji, emoji);
             }
-            pairs.sort(() => Math.random() - 0.5);
+            
+            // 洗牌
+            for (let i = pairs.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
+            }
             
             board = [];
             for (let i = 0; i < 8; i++) {
@@ -104,14 +127,16 @@
             }
             
             left = 64;
+            score = 0;
             selected = null;
             startTime = Date.now();
-            render();
             
             if (window.timer) clearInterval(window.timer);
             window.timer = setInterval(() => {
                 document.getElementById('time').textContent = Math.floor((Date.now() - startTime) / 1000);
             }, 1000);
+            
+            render();
         }
         
         function render() {
@@ -122,7 +147,7 @@
                 for (let j = 0; j < 8; j++) {
                     const cell = document.createElement('div');
                     cell.className = 'cell' + (board[i][j] === '' ? ' empty' : '');
-                    cell.textContent = board[i][j];
+                    cell.textContent = board[i][j] || '';
                     
                     if (selected && selected.i === i && selected.j === j) {
                         cell.classList.add('selected');
@@ -134,10 +159,11 @@
             }
             
             document.getElementById('left').textContent = left;
+            document.getElementById('score').textContent = score;
             
             if (left === 0) {
                 clearInterval(window.timer);
-                setTimeout(() => alert('恭喜通关！用时 ' + document.getElementById('time').textContent + ' 秒'), 100);
+                setTimeout(() => alert(`🎉 恭喜通关！\n用时: ${document.getElementById('time').textContent}秒\n得分: ${score}`), 100);
             }
         }
         
@@ -147,13 +173,18 @@
             if (!selected) {
                 selected = { i, j };
             } else {
+                // 点击同一个，取消选择
                 if (selected.i === i && selected.j === j) {
                     selected = null;
-                } else if (board[selected.i][selected.j] === board[i][j]) {
+                } 
+                // 点击相同图案
+                else if (board[selected.i][selected.j] === board[i][j]) {
                     if (canConnect(selected.i, selected.j, i, j)) {
+                        // 消除
                         board[selected.i][selected.j] = '';
                         board[i][j] = '';
                         left -= 2;
+                        score += 10;
                         selected = null;
                     } else {
                         selected = { i, j };
@@ -165,12 +196,45 @@
             render();
         }
         
+        // 检查两个点是否可以连接（最多一个转角）
         function canConnect(x1, y1, x2, y2) {
-            // 简单：直线
+            // 直线连接
             if (x1 === x2 || y1 === y2) return true;
-            // 简单：一个转角
-            if (board[x1][y2] === '' && (canConnect(x1, y1, x1, y2) && canConnect(x1, y2, x2, y2))) return true;
-            if (board[x2][y1] === '' && canConnect(x1, y1, x2, y1) && canConnect(x2, y1, x2, y2))) return true;
+            
+            // 一个转角：先水平后垂直
+            // 找到转弯点 (x1, y2)
+            if (board[x1][y2] === '' && canPath(x1, y1, x1, y2) && canPath(x1, y2, x2, y2)) {
+                return true;
+            }
+            
+            // 一个转角：先垂直后水平
+            // 找到转弯点 (x2, y1)
+            if (board[x2][y1] === '' && canPath(x1, y1, x2, y1) && canPath(x2, y1, x2, y2)) {
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // 检查两点间是否有障碍（直线）
+        function canPath(x1, y1, x2, y2) {
+            if (x1 === x2) {
+                // 垂直
+                const minY = Math.min(y1, y2);
+                const maxY = Math.max(y1, y2);
+                for (let y = minY + 1; y < maxY; y++) {
+                    if (board[x1][y] !== '') return false;
+                }
+                return true;
+            } else if (y1 === y2) {
+                // 水平
+                const minX = Math.min(x1, x2);
+                const maxX = Math.max(x1, x2);
+                for (let x = minX + 1; x < maxX; x++) {
+                    if (board[x][y1] !== '') return false;
+                }
+                return true;
+            }
             return false;
         }
         
