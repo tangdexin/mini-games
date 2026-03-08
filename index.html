@@ -3,45 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎮 H5小游戏合集</title>
+    <title>🎮 H5小游戏合集 - 合成升级版</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             min-height: 100vh;
-            padding: 40px 20px;
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 30px 20px;
+            font-family: -apple-system, sans-serif;
         }
         
         header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
         
-        h1 {
-            color: #fff;
-            font-size: 36px;
-            margin-bottom: 10px;
-        }
+        h1 { color: #fff; font-size: 28px; margin-bottom: 10px; }
+        .subtitle { color: rgba(255,255,255,0.6); font-size: 14px; }
         
-        .subtitle {
-            color: rgba(255,255,255,0.6);
-            font-size: 14px;
+        .section-title {
+            color: #00ff88;
+            font-size: 16px;
+            margin: 25px 0 15px;
+            padding-left: 15px;
+            border-left: 3px solid #00ff88;
         }
         
         .games {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
             max-width: 800px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
         }
         
         a {
             background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 20px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
             transition: all 0.3s;
@@ -50,29 +49,64 @@
         }
         
         a:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0,255,136,0.2);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,255,136,0.2);
             border-color: #00ff88;
         }
         
-        .icon { font-size: 50px; margin-bottom: 15px; }
-        .name { color: #fff; font-size: 18px; font-weight: bold; margin-bottom: 8px; }
-        .desc { color: rgba(255,255,255,0.6); font-size: 13px; }
+        .icon { font-size: 40px; margin-bottom: 10px; }
+        .name { color: #fff; font-size: 14px; font-weight: bold; }
+        .desc { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 5px; }
         
-        footer {
-            text-align: center;
-            margin-top: 50px;
-            color: rgba(255,255,255,0.3);
-            font-size: 12px;
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-top: 8px;
         }
+        .tag.new { background: #ff6b6b; color: #fff; }
+        .tag.hot { background: #ffd700; color: #1a1a2e; }
     </style>
 </head>
 <body>
     <header>
-        <h1>🎮 H5小游戏</h1>
-        <p class="subtitle">纯HTML5开发，打开即玩</p>
+        <h1>🎮 H5小游戏合集</h1>
+        <p class="subtitle">纯HTML5开发 | 合成升级 | 放置养成</p>
     </header>
     
+    <div class="section-title">🔥 合成升级类</div>
+    <div class="games">
+        <a href="merge-fruit/index.html">
+            <div class="icon">🍉</div>
+            <div class="name">水果合成</div>
+            <div class="desc">两个相同水果合成更高一级</div>
+            <span class="tag new">NEW</span>
+        </a>
+        
+        <a href="hero-merge/index.html">
+            <div class="icon">⚔️</div>
+            <div class="name">英雄合成</div>
+            <div class="desc">10个同级英雄合成更高级</div>
+            <span class="tag new">NEW</span>
+        </a>
+        
+        <a href="idle-miner/index.html">
+            <div class="icon">⛏️</div>
+            <div class="name">矿工放置</div>
+            <div class="desc">购买矿工，自动产出金币</div>
+            <span class="tag new">NEW</span>
+        </a>
+        
+        <a href="merge-2048/index.html">
+            <div class="icon">🧩</div>
+            <div class="name">2048</div>
+            <div class="desc">经典数字合成游戏</div>
+            <span class="tag hot">经典</span>
+        </a>
+    </div>
+    
+    <div class="section-title">🎮 休闲益智类</div>
     <div class="games">
         <a href="text-adventure/index.html">
             <div class="icon">📖</div>
@@ -89,13 +123,13 @@
         <a href="brain-hole/index.html">
             <div class="icon">🧠</div>
             <div class="name">脑洞问答</div>
-            <div class="desc">答 题 分 100万</div>
+            <div class="desc">答题分100万</div>
         </a>
         
         <a href="breakout/index.html">
             <div class="icon">👾</div>
             <div class="name">打砖块</div>
-            <div class="desc">经典街机游戏</div>
+            <div class="desc">经典街机</div>
         </a>
         
         <a href="pingpong/index.html">
@@ -116,9 +150,5 @@
             <div class="desc">消除配对</div>
         </a>
     </div>
-    
-    <footer>
-        <p>持续更新中... 🚀</p>
-    </footer>
 </body>
 </html>

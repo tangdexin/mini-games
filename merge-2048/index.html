@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧩 2048 合成大师</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: -apple-system, sans-serif;
+            padding: 20px;
+        }
+        
+        h1 { color: #fff; font-size: 32px; margin-bottom: 15px; }
+        
+        .header {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .score-box {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            color: #fff;
+        }
+        
+        .score-label { font-size: 12px; opacity: 0.7; }
+        .score-value { font-size: 24px; font-weight: bold; color: #ffd700; }
+        
+        .game-container {
+            background: rgba(187, 173, 160, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        .cell {
+            width: 70px;
+            height: 70px;
+            background: rgba(238, 228, 218, 0.2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            transition: all 0.15s;
+        }
+        
+        .cell[data-val="2"] { background: #eee4da; color: #776e65; }
+        .cell[data-val="4"] { background: #ede0c8; color: #776e65; }
+        .cell[data-val="8"] { background: #f2b179; }
+        .cell[data-val="16"] { background: #f59563; }
+        .cell[data-val="32"] { background: #f67c5f; }
+        .cell[data-val="64"] { background: #f65e3b; }
+        .cell[data-val="128"] { background: #edcf72; font-size: 24px; }
+        .cell[data-val="256"] { background: #edcc61; font-size: 24px; }
+        .cell[data-val="512"] { background: #edc850; font-size: 24px; }
+        .cell[data-val="1024"] { background: #edc53f; font-size: 20px; }
+        .cell[data-val="2048"] { background: #edc22e; font-size: 20px; box-shadow: 0 0 20px rgba(237,194,46,0.5); }
+        
+        .new-btn {
+            margin-top: 20px;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #00ff88, #00b4db);
+            border: none;
+            border-radius: 25px;
+            color: #1a1a2e;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .tips {
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧩 2048</h1>
+    
+    <div class="header">
+        <div class="score-box">
+            <div class="score-label">分数</div>
+            <div class="score-value" id="score">0</div>
+        </div>
+        <div class="score-box">
+            <div class="score-label">最高</div>
+            <div class="score-value" id="best">0</div>
+        </div>
+    </div>
+    
+    <div class="game-container">
+        <div class="grid" id="grid"></div>
+    </div>
+    
+    <button class="new-btn" onclick="init()">🔄 新游戏</button>
+    
+    <div class="tips">← ↑ → ↓ 或 滑动屏幕 移动方块</div>
+    
+    <script>
+        const SIZE = 4;
+        let grid = [];
+        let score = 0;
+        let best = localStorage.getItem('2048best') || 0;
+        
+        document.getElementById('best').textContent = best;
+        
+        function init() {
+            grid = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+            score = 0;
+            addRandom();
+            addRandom();
+            render();
+        }
+        
+        function addRandom() {
+            const empty = [];
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    if (grid[r][c] === 0) empty.push({r, c});
+                }
+            }
+            if (empty.length > 0) {
+                const {r, c} = empty[Math.floor(Math.random() * empty.length)];
+                grid[r][c] = Math.random() < 0.9 ? 2 : 4;
+            }
+        }
+        
+        function render() {
+            document.getElementById('score').textContent = score;
+            const div = document.getElementById('grid');
+            div.innerHTML = '';
+            
+            for (let r = 0; r < SIZE; r++) {
+                for (let c = 0; c < SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.val = grid[r][c];
+                    cell.textContent = grid[r][c] || '';
+                    div.appendChild(cell);
+                }
+            }
+            
+            if (score > best) {
+                best = score;
+                localStorage.setItem('2048best', best);
+                document.getElementById('best').textContent = best;
+            }
+        }
+        
+        function move(direction) {
+            let moved = false;
+            
+            const rotate = n => {
+                const result = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        if (direction === 0) result[r][c] = grid[r][c];
+                        else if (direction === 1) result[c][SIZE-1-r] = grid[r][c];
+                        else if (direction === 2) result[SIZE-1-r][SIZE-1-c] = grid[r][c];
+                        else if (direction === 3) result[SIZE-1-c][r] = grid[r][c];
+                    }
+                }
+                return result;
+            };
+            
+            const slide = row => {
+                let arr = row.filter(x => x !== 0);
+                for (let i = 0; i < arr.length - 1; i++) {
+                    if (arr[i] === arr[i + 1]) {
+                        arr[i] *= 2;
+                        score += arr[i];
+                        arr.splice(i + 1, 1);
+                    }
+                }
+                while (arr.length < SIZE) arr.push(0);
+                return arr;
+            };
+            
+            // 简化：直接处理
+            if (direction === 'left') {
+                for (let r = 0; r < SIZE; r++) {
+                    const old = JSON.stringify(grid[r]);
+                    grid[r] = slide(grid[r]);
+                    if (old !== JSON.stringify(grid[r])) moved = true;
+                }
+            } else if (direction === 'right') {
+                for (let r = 0; r < SIZE; r++) {
+                    const old = JSON.stringify(grid[r]);
+                    grid[r] = slide(grid[r].reverse()).reverse();
+                    if (old !== JSON.stringify(grid[r])) moved = true;
+                }
+            } else if (direction === 'up') {
+                for (let c = 0; c < SIZE; c++) {
+                    let col = [];
+                    for (let r = 0; r < SIZE; r++) col.push(grid[r][c]);
+                    const old = JSON.stringify(col);
+                    col = slide(col);
+                    for (let r = 0; r < SIZE; r++) grid[r][c] = col[r];
+                    if (old !== JSON.stringify(col)) moved = true;
+                }
+            } else if (direction === 'down') {
+                for (let c = 0; c < SIZE; c++) {
+                    let col = [];
+                    for (let r = SIZE - 1; r >= 0; r--) col.push(grid[r][c]);
+                    const old = JSON.stringify(col);
+                    col = slide(col);
+                    for (let r = SIZE - 1, i = 0; r >= 0; r--, i++) grid[r][c] = col[i];
+                    if (old !== JSON.stringify(col)) moved = true;
+                }
+            }
+            
+            if (moved) {
+                addRandom();
+                render();
+            }
+        }
+        
+        // 键盘
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowLeft') move('left');
+            if (e.key === 'ArrowRight') move('right');
+            if (e.key === 'ArrowUp') move('up');
+            if (e.key === 'ArrowDown') move('down');
+        });
+        
+        // 触摸滑动
+        let startX, startY;
+        document.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+        
+        document.addEventListener('touchend', e => {
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const dx = endX - startX;
+            const dy = endY - startY;
+            
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (Math.abs(dx) > 30) move(dx > 0 ? 'right' : 'left');
+            } else {
+                if (Math.abs(dy) > 30) move(dy > 0 ? 'down' : 'up');
+            }
+        });
+        
+        init();
+    </script>
+</body>
+</html>

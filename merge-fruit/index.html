@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍉 水果合成大作战</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+        }
+        body {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            font-family: -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            width: 100%;
+            padding: 15px;
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .score-box {
+            text-align: center;
+            color: #fff;
+        }
+        
+        .score-label { font-size: 12px; opacity: 0.7; }
+        .score-value { font-size: 24px; font-weight: bold; }
+        .score-value.s { color: #00ff88; }
+        .score-value.g { color: #ffd700; }
+        
+        #gameCanvas {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin: 10px;
+        }
+        
+        .next-fruit {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .next-icon { font-size: 30px; }
+        
+        .start-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 50px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #00ff88, #00b4db);
+            border: none;
+            border-radius: 30px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,255,136,0.4);
+        }
+        
+        .over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .over.show { display: flex; }
+        .over h2 { color: #ffd700; font-size: 36px; margin-bottom: 20px; }
+        .over p { color: #fff; font-size: 24px; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="score-box">
+            <div class="score-label">分数</div>
+            <div class="score-value s" id="score">0</div>
+        </div>
+        <div class="next-fruit">
+            <span>下一个:</span>
+            <span class="next-icon" id="nextIcon">🍒</span>
+        </div>
+        <div class="score-box">
+            <div class="score-label">最高</div>
+            <div class="score-value g" id="best">0</div>
+        </div>
+    </div>
+    
+    <canvas id="gameCanvas" width="360" height="600"></canvas>
+    
+    <button class="start-btn" id="startBtn" onclick="startGame()">开始游戏</button>
+    
+    <div class="over" id="over">
+        <h2>游戏结束!</h2>
+        <p>得分: <span id="finalScore">0</span></p>
+        <button class="start-btn" onclick="startGame()">再来一次</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 水果等级定义
+        const FRUITS = [
+            { icon: '🍒', score: 2, radius: 20, color: '#ff4444' },
+            { icon: '🍊', score: 4, radius: 25, color: '#ff9944' },
+            { icon: '🍋', score: 8, radius: 30, color: '#ffdd44' },
+            { icon: '🍇', score: 16, radius: 35, color: '#aa44ff' },
+            { icon: '🍉', score: 32, radius: 40, color: '#44ff88' },
+            { icon: '🍑', score: 64, radius: 45, color: '#ff88aa' },
+            { icon: '🥝', score: 128, radius: 50, color: '#88ff44' },
+            { icon: '🍍', score: 256, radius: 55, color: '#ffaa44' },
+            { icon: '🥥', score: 512, radius: 60, color: '#ffdddd' },
+            { icon: '🌟', score: 1024, radius: 65, color: '#ffd700' }
+        ];
+        
+        const COLS = 7;
+        const ROWS = 12;
+        const CELL_WIDTH = 50;
+        const CELL_HEIGHT = 50;
+        let board = [];
+        let currentFruit = null;
+        let nextFruit = null;
+        let score = 0;
+        let bestScore = localStorage.getItem('mergeFruitBest') || 0;
+        let gameOver = false;
+        let isDropping = false;
+        
+        document.getElementById('best').textContent = bestScore;
+        
+        function init() {
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(null));
+            score = 0;
+            gameOver = false;
+            isDropping = false;
+            updateScore();
+            spawnFruit();
+            draw();
+        }
+        
+        function spawnFruit() {
+            const level = Math.floor(Math.random() * 3); // 0-2级水果
+            currentFruit = {
+                level: level,
+                x: Math.floor(COLS / 2) * CELL_WIDTH + CELL_WIDTH / 2,
+                y: 30,
+                targetY: 30
+            };
+            
+            const nextLevel = Math.floor(Math.random() * 3);
+            nextFruit = nextLevel;
+            document.getElementById('nextIcon').textContent = FRUITS[nextLevel].icon;
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+        
+        function draw() {
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制已有水果
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] !== null) {
+                        drawFruit(c * CELL_WIDTH + CELL_WIDTH/2, r * CELL_HEIGHT + CELL_HEIGHT/2, board[r][c]);
+                    }
+                }
+            }
+            
+            // 绘制当前下落的水果
+            if (currentFruit) {
+                drawFruit(currentFruit.x, currentFruit.y, currentFruit.level);
+            }
+        }
+        
+        function drawFruit(x, y, level) {
+            const fruit = FRUITS[level];
+            
+            ctx.beginPath();
+            ctx.arc(x, y, fruit.radius, 0, Math.PI * 2);
+            
+            const gradient = ctx.createRadialGradient(x - 5, y - 5, 0, x, y, fruit.radius);
+            gradient.addColorStop(0, '#fff');
+            gradient.addColorStop(0.3, fruit.color);
+            gradient.addColorStop(1, fruit.color);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            ctx.font = fruit.radius + 'px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(fruit.icon, x, y + 2);
+        }
+        
+        function getCell(x, y) {
+            const c = Math.floor(x / CELL_WIDTH);
+            const r = Math.floor(y / CELL_HEIGHT);
+            return { c, r };
+        }
+        
+        function drop() {
+            if (isDropping || !currentFruit) return;
+            
+            isDropping = true;
+            
+            const targetY = (ROWS - 1) * CELL_HEIGHT + CELL_HEIGHT / 2;
+            const interval = setInterval(() => {
+                currentFruit.y += 15;
+                
+                if (currentFruit.y >= targetY) {
+                    clearInterval(interval);
+                    placeFruit();
+                }
+                draw();
+            }, 30);
+        }
+        
+        function placeFruit() {
+            const { c, r } = getCell(currentFruit.x, currentFruit.y);
+            
+            if (r <= 0) {
+                gameOver = true;
+                document.getElementById('over').classList.add('show');
+                document.getElementById('finalScore').textContent = score;
+                if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('mergeFruitBest', bestScore);
+                    document.getElementById('best').textContent = bestScore;
+                }
+                return;
+            }
+            
+            // 放置水果
+            board[r][c] = currentFruit.level;
+            
+            // 检查合并
+            setTimeout(() => checkMerge(r, c), 100);
+            
+            isDropping = false;
+        }
+        
+        function checkMerge(r, c) {
+            if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return;
+            
+            const level = board[r][c];
+            if (level === null || level >= FRUITS.length - 1) {
+                spawnFruit();
+                draw();
+                return;
+            }
+            
+            // 检查周围是否有相同的
+            const neighbors = [
+                { dr: -1, dc: 0 },
+                { dr: 1, dc: 0 },
+                { dr: 0, dc: -1 },
+                { dr: 0, dc: 1 }
+            ];
+            
+            for (const n of neighbors) {
+                const nr = r + n.dr;
+                const nc = c + n.dc;
+                
+                if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && 
+                    board[nr][nc] === level) {
+                    
+                    // 合并！
+                    board[r][c] = level + 1;
+                    board[nr][nc] = null;
+                    score += FRUITS[level + 1].score;
+                    updateScore();
+                    
+                    // 播放合并动画
+                    createMergeEffect(c * CELL_WIDTH + CELL_WIDTH/2, r * CELL_HEIGHT + CELL_HEIGHT/2);
+                    
+                    // 递归检查
+                    setTimeout(() => checkMerge(r, c), 150);
+                    setTimeout(() => checkMerge(nr, nc), 150);
+                    
+                    draw();
+                    return;
+                }
+            }
+            
+            spawnFruit();
+            draw();
+        }
+        
+        function createMergeEffect(x, y) {
+            ctx.fillStyle = 'rgba(255,215,0,0.8)';
+            ctx.beginPath();
+            ctx.arc(x, y, 40, 0, Math.PI*2);
+            ctx.fill();
+        }
+        
+        function startGame() {
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('over').classList.remove('show');
+            init();
+        }
+        
+        // 触摸控制
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (currentFruit && !isDropping) {
+                const rect = canvas.getBoundingClientRect();
+                currentFruit.x = e.touches[0].clientX - rect.left;
+                currentFruit.x = Math.max(30, Math.min(canvas.width - 30, currentFruit.x));
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            if (currentFruit && !isDropping) {
+                drop();
+            }
+        });
+        
+        // 鼠标控制
+        canvas.addEventListener('mousemove', e => {
+            if (currentFruit && !isDropping) {
+                const rect = canvas.getBoundingClientRect();
+                currentFruit.x = e.clientX - rect.left;
+                currentFruit.x = Math.max(30, Math.min(canvas.width - 30, currentFruit.x));
+                draw();
+            }
+        });
+        
+        canvas.addEventListener('click', e => {
+            if (currentFruit && !isDropping) {
+                drop();
+            }
+        });
+        
+        init();
+    </script>
+</body>
+</html>

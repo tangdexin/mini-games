@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⛏️ 矿工放置合成</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            font-family: -apple-system, sans-serif;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        h1 { text-align: center; margin-bottom: 20px; }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        
+        .stat { text-align: center; }
+        .stat-label { font-size: 12px; opacity: 0.7; }
+        .stat-value { font-size: 28px; font-weight: bold; }
+        .gold { color: #ffd700; }
+        
+        .miners {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .miner-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .miner-card:hover { transform: translateY(-3px); }
+        .miner-card.selected { 
+            border-color: #00ff88; 
+            background: rgba(0,255,136,0.2);
+        }
+        
+        .miner-icon { font-size: 40px; margin-bottom: 8px; }
+        .miner-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .miner-income { font-size: 12px; color: #00ff88; }
+        .miner-cost { font-size: 12px; color: #ffd700; }
+        .miner-count { 
+            font-size: 12px; 
+            background: #ff6b6b;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .btn-buy {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 30px auto;
+            padding: 15px;
+            background: linear-gradient(135deg, #00ff88, #00b4db);
+            border: none;
+            border-radius: 25px;
+            color: #1a1a2e;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .log {
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            font-size: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        
+        .auto-save {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 10px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>⛏️ 矿工放置合成</h1>
+    
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-label">金币</div>
+            <div class="stat-value gold" id="gold">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">每秒收益</div>
+            <div class="stat-value gold" id="income">0</div>
+        </div>
+    </div>
+    
+    <div class="miners" id="miners"></div>
+    
+    <button class="btn-buy" onclick="buySelected()">🛒 购买矿工</button>
+    
+    <div class="log" id="log"></div>
+    
+    <div class="auto-save">💾 自动保存中...</div>
+
+    <script>
+        const MINERS = [
+            { name: '矿工', icon: '⛏️', baseIncome: 1, baseCost: 10, max: 100 },
+            { name: '监工', icon: '👷', baseIncome: 5, baseCost: 100, max: 50 },
+            { name: '工程师', icon: '🔧', baseIncome: 25, baseCost: 1000, max: 30 },
+            { name: '爆破手', icon: '🧨', baseIncome: 100, baseCost: 10000, max: 20 },
+            { name: '钻探机', icon: '🚜', baseIncome: 500, baseCost: 100000, max: 10 },
+            { name: '矿场主', icon: '🏭', baseIncome: 3000, baseCost: 1000000, max: 5 }
+        ];
+        
+        let gold = parseInt(localStorage.getItem('minerGold') || '0');
+        let counts = JSON.parse(localStorage.getItem('minerCounts') || '[0,0,0,0,0,0]');
+        let selected = 0;
+        
+        function save() {
+            localStorage.setItem('minerGold', gold);
+            localStorage.setItem('minerCounts', JSON.stringify(counts));
+        }
+        
+        function getCost(level) {
+            return Math.floor(MINERS[level].baseCost * Math.pow(1.15, counts[level]));
+        }
+        
+        function getIncome(level) {
+            return MINERS[level].baseIncome * counts[level];
+        }
+        
+        function totalIncome() {
+            return MINERS.reduce((sum, m, i) => sum + getIncome(i), 0);
+        }
+        
+        function render() {
+            document.getElementById('gold').textContent = Math.floor(gold);
+            document.getElementById('income').textContent = totalIncome();
+            
+            const div = document.getElementById('miners');
+            div.innerHTML = '';
+            
+            MINERS.forEach((miner, i) => {
+                const card = document.createElement('div');
+                card.className = 'miner-card' + (selected === i ? ' selected' : '');
+                card.innerHTML = `
+                    <div class="miner-icon">${miner.icon}</div>
+                    <div class="miner-name">${miner.name}</div>
+                    <div class="miner-income">+${miner.baseIncome}/秒</div>
+                    <div class="miner-cost">💰 ${getCost(i)}</div>
+                    <div class="miner-count">${counts[i]}/${miner.max}</div>
+                `;
+                card.onclick = () => { selected = i; render(); };
+                div.appendChild(card);
+            });
+        }
+        
+        function buySelected() {
+            const cost = getCost(selected);
+            if (counts[selected] >= MINERS[selected].max) {
+                log('已达到最大数量！');
+                return;
+            }
+            if (gold < cost) {
+                log('金币不足！需要 ' + cost);
+                return;
+            }
+            
+            gold -= cost;
+            counts[selected]++;
+            save();
+            log(`购买了 ${MINERS[selected].icon} ${MINERS[selected].name}！`);
+            render();
+        }
+        
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            const item = document.createElement('div');
+            item.textContent = msg;
+            logDiv.prepend(item);
+            if (logDiv.children.length > 10) logDiv.lastChild.remove();
+        }
+        
+        // 自动收益
+        setInterval(() => {
+            gold += totalIncome() / 10;
+            save();
+            render();
+        }, 100);
+        
+        // 初始
+        if (gold === 0 && counts.every(c => c === 0)) {
+            gold = 100;
+            log('新玩家赠送100金币！');
+        }
+        
+        render();
+    </script>
+</body>
+</html>
