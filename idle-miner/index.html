@@ -2,74 +2,86 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>⛏️ 矿工放置合成</title>
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
         body {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             font-family: -apple-system, sans-serif;
-            padding: 20px;
+            padding: 15px;
             color: #fff;
         }
         
-        h1 { text-align: center; margin-bottom: 20px; }
+        h1 { text-align: center; margin-bottom: 15px; font-size: 22px; }
         
         .stats {
             display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 30px;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 15px;
         }
         
-        .stat { text-align: center; }
+        .stat { text-align: center; flex: 1; }
         .stat-label { font-size: 12px; opacity: 0.7; }
-        .stat-value { font-size: 28px; font-weight: bold; }
+        .stat-value { font-size: 22px; font-weight: bold; }
         .gold { color: #ffd700; }
+        .income { color: #00ff88; }
         
         .miners {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            max-width: 400px;
-            margin: 0 auto;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            max-height: 55vh;
+            overflow-y: auto;
         }
         
         .miner-card {
             background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 15px;
+            border-radius: 12px;
+            padding: 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.2s;
             border: 2px solid transparent;
         }
         
-        .miner-card:hover { transform: translateY(-3px); }
+        .miner-card:hover { transform: scale(1.02); }
         .miner-card.selected { 
             border-color: #00ff88; 
-            background: rgba(0,255,136,0.2);
+            background: rgba(0,255,136,0.15);
+            box-shadow: 0 0 15px rgba(0,255,136,0.3);
         }
         
-        .miner-icon { font-size: 40px; margin-bottom: 8px; }
-        .miner-name { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
-        .miner-income { font-size: 12px; color: #00ff88; }
-        .miner-cost { font-size: 12px; color: #ffd700; }
+        .miner-card.disabled { opacity: 0.5; }
+        
+        .miner-icon { font-size: 32px; margin-bottom: 5px; }
+        .miner-name { font-size: 14px; font-weight: bold; margin-bottom: 3px; }
+        .miner-income { font-size: 12px; color: #00ff88; margin-bottom: 3px; }
+        .miner-cost { font-size: 12px; color: #ffd700; margin-bottom: 3px; }
         .miner-count { 
-            font-size: 12px; 
-            background: #ff6b6b;
+            font-size: 11px; 
+            background: rgba(255,107,107,0.3);
             padding: 2px 8px;
             border-radius: 10px;
             display: inline-block;
-            margin-top: 5px;
         }
+        
+        .miner-card.selected .miner-count { background: #00ff88; color: #1a1a2e; }
         
         .btn-buy {
             display: block;
             width: 100%;
-            max-width: 300px;
-            margin: 30px auto;
             padding: 15px;
             background: linear-gradient(135deg, #00ff88, #00b4db);
             border: none;
@@ -78,25 +90,48 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s;
+        }
+        
+        .btn-buy:active { transform: scale(0.98); }
+        .btn-buy:disabled { opacity: 0.5; }
+        
+        .progress-bar {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            height: 20px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #00ff88, #00b4db);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
         }
         
         .log {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 15px;
+            max-width: 100%;
+            margin-top: 15px;
+            padding: 12px;
             background: rgba(0,0,0,0.3);
             border-radius: 10px;
             font-size: 12px;
-            max-height: 120px;
+            max-height: 80px;
             overflow-y: auto;
         }
+        
+        .log-item { margin-bottom: 5px; opacity: 0.8; }
+        .log-item.new { color: #00ff88; }
         
         .auto-save {
             position: fixed;
             bottom: 10px;
             right: 10px;
             font-size: 10px;
-            opacity: 0.5;
+            opacity: 0.3;
         }
     </style>
 </head>
@@ -110,17 +145,25 @@
         </div>
         <div class="stat">
             <div class="stat-label">每秒收益</div>
-            <div class="stat-value gold" id="income">0</div>
+            <div class="stat-value income" id="income">0</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">矿工数</div>
+            <div class="stat-value" id="totalMiners">0</div>
         </div>
     </div>
     
     <div class="miners" id="miners"></div>
     
-    <button class="btn-buy" onclick="buySelected()">🛒 购买矿工</button>
+    <button class="btn-buy" id="buyBtn" onclick="buySelected()">🛒 购买矿工</button>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress" style="width: 0%"></div>
+    </div>
     
     <div class="log" id="log"></div>
     
-    <div class="auto-save">💾 自动保存中...</div>
+    <div class="auto-save">💾 自动保存</div>
 
     <script>
         const MINERS = [
@@ -135,6 +178,7 @@
         let gold = parseInt(localStorage.getItem('minerGold') || '0');
         let counts = JSON.parse(localStorage.getItem('minerCounts') || '[0,0,0,0,0,0]');
         let selected = 0;
+        let lastUpdate = Date.now();
         
         function save() {
             localStorage.setItem('minerGold', gold);
@@ -153,68 +197,109 @@
             return MINERS.reduce((sum, m, i) => sum + getIncome(i), 0);
         }
         
+        function totalMiners() {
+            return counts.reduce((sum, c) => sum + c, 0);
+        }
+        
+        function formatNumber(num) {
+            if (num >= 1000000000) return (num / 1000000000).toFixed(1) + 'B';
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 10000) return (num / 10000).toFixed(1) + '万';
+            return num.toLocaleString();
+        }
+        
         function render() {
-            document.getElementById('gold').textContent = Math.floor(gold);
-            document.getElementById('income').textContent = totalIncome();
+            document.getElementById('gold').textContent = formatNumber(Math.floor(gold));
+            document.getElementById('income').textContent = formatNumber(totalIncome());
+            document.getElementById('totalMiners').textContent = totalMiners();
             
             const div = document.getElementById('miners');
             div.innerHTML = '';
             
+            const cost = getCost(selected);
+            const canBuy = gold >= cost && counts[selected] < MINERS[selected].max;
+            
+            document.getElementById('buyBtn').textContent = canBuy 
+                ? `🛒 购买 ${MINERS[selected].icon} ${MINERS[selected].name} (💰${formatNumber(cost)})`
+                : `💰 需要 ${formatNumber(cost)} 金币`;
+            document.getElementById('buyBtn').disabled = !canBuy;
+            
             MINERS.forEach((miner, i) => {
                 const card = document.createElement('div');
-                card.className = 'miner-card' + (selected === i ? ' selected' : '');
+                const minerCost = getCost(i);
+                const canAfford = gold >= minerCost && counts[i] < miner.max;
+                
+                card.className = 'miner-card' + (selected === i ? ' selected' : '') + (!canAfford ? ' disabled' : '');
                 card.innerHTML = `
                     <div class="miner-icon">${miner.icon}</div>
                     <div class="miner-name">${miner.name}</div>
-                    <div class="miner-income">+${miner.baseIncome}/秒</div>
-                    <div class="miner-cost">💰 ${getCost(i)}</div>
+                    <div class="miner-income">+${formatNumber(miner.baseIncome)}/秒</div>
+                    <div class="miner-cost">💰 ${formatNumber(minerCost)}</div>
                     <div class="miner-count">${counts[i]}/${miner.max}</div>
                 `;
                 card.onclick = () => { selected = i; render(); };
                 div.appendChild(card);
             });
+            
+            // Update progress bar
+            const progress = Math.min(100, (gold / cost) * 100);
+            document.getElementById('progress').style.width = progress + '%';
         }
         
         function buySelected() {
             const cost = getCost(selected);
             if (counts[selected] >= MINERS[selected].max) {
-                log('已达到最大数量！');
+                log('已达到最大数量！', 'new');
                 return;
             }
             if (gold < cost) {
-                log('金币不足！需要 ' + cost);
+                log('金币不足！需要 ' + formatNumber(cost), 'new');
                 return;
             }
             
             gold -= cost;
             counts[selected]++;
             save();
-            log(`购买了 ${MINERS[selected].icon} ${MINERS[selected].name}！`);
+            log(`购买了 ${MINERS[selected].icon} ${MINERS[selected].name}！`, 'new');
             render();
         }
         
-        function log(msg) {
+        function log(msg, type = '') {
             const logDiv = document.getElementById('log');
             const item = document.createElement('div');
+            item.className = 'log-item ' + type;
             item.textContent = msg;
             logDiv.prepend(item);
             if (logDiv.children.length > 10) logDiv.lastChild.remove();
         }
         
-        // 自动收益
-        setInterval(() => {
-            gold += totalIncome() / 10;
-            save();
+        // Auto income with accurate timing
+        function update() {
+            const now = Date.now();
+            const delta = (now - lastUpdate) / 1000;
+            lastUpdate = now;
+            
+            if (totalIncome() > 0) {
+                gold += totalIncome() * delta;
+                
+                // Auto save every 10 seconds
+                if (Math.floor(now / 10000) !== Math.floor((now - delta * 1000) / 10000)) {
+                    save();
+                }
+            }
+            
             render();
-        }, 100);
+            requestAnimationFrame(update);
+        }
         
-        // 初始
+        // Initial
         if (gold === 0 && counts.every(c => c === 0)) {
             gold = 100;
-            log('新玩家赠送100金币！');
+            log('新玩家赠送100金币！欢迎来到矿工世界！', 'new');
         }
         
         render();
+        update();
     </script>
 </body>
 </html>

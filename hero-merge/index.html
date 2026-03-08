@@ -2,42 +2,40 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>⚔️ 英雄合成进化</title>
+    <meta name="theme-color" content="#1a1a2e">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
         body {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             font-family: -apple-system, sans-serif;
-            padding: 20px;
+            padding: 15px;
+            color: #fff;
         }
         
-        h1 { color: #fff; text-align: center; margin-bottom: 20px; }
+        h1 { text-align: center; margin-bottom: 12px; font-size: 20px; }
         
         .stats {
             display: flex;
             justify-content: center;
-            gap: 40px;
-            margin-bottom: 20px;
+            gap: 30px;
+            margin-bottom: 12px;
         }
         
-        .stat {
-            text-align: center;
-            color: #fff;
-        }
-        
+        .stat { text-align: center; }
         .stat-label { font-size: 12px; opacity: 0.7; }
-        .stat-value { font-size: 24px; font-weight: bold; }
+        .stat-value { font-size: 20px; font-weight: bold; }
         .stat-value.gold { color: #ffd700; }
         .stat-value.exp { color: #00ff88; }
         
         .heroes-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            max-width: 400px;
-            margin: 0 auto;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
         }
         
         .hero-slot {
@@ -51,41 +49,43 @@
             position: relative;
             cursor: pointer;
             transition: all 0.2s;
+            padding: 5px;
         }
         
         .hero-slot:hover { transform: scale(1.05); }
         .hero-slot.selected { 
             background: rgba(0,255,136,0.3); 
             box-shadow: 0 0 20px rgba(0,255,136,0.5);
+            border: 2px solid #00ff88;
         }
-        .hero-slot.locked { opacity: 0.3; cursor: not-allowed; }
+        .hero-slot.locked { opacity: 0.4; cursor: not-allowed; }
         
-        .hero-icon { font-size: 36px; margin-bottom: 5px; }
+        .hero-icon { font-size: 28px; margin-bottom: 3px; }
         .hero-name { font-size: 10px; color: #fff; }
         .hero-count { 
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: 3px;
+            right: 3px;
             background: #ff6b6b;
             color: #fff;
-            font-size: 12px;
-            padding: 2px 6px;
-            border-radius: 10px;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 8px;
         }
         
         .heroes-row {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             justify-content: center;
-            margin: 20px 0;
+            margin: 10px 0;
             flex-wrap: wrap;
         }
         
         .hero-card {
-            width: 70px;
-            height: 90px;
+            width: 60px;
+            height: 75px;
             background: rgba(255,255,255,0.1);
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -93,28 +93,32 @@
             cursor: pointer;
             border: 2px solid transparent;
             transition: all 0.2s;
+            padding: 5px;
         }
         
-        .hero-card:hover { transform: translateY(-5px); }
+        .hero-card:hover { transform: translateY(-3px); }
         .hero-card.selected { border-color: #00ff88; background: rgba(0,255,136,0.2); }
-        .hero-card .icon { font-size: 32px; }
-        .hero-card .name { font-size: 10px; color: #fff; margin-top: 5px; }
+        .hero-card .icon { font-size: 26px; }
+        .hero-card .name { font-size: 9px; color: #fff; margin-top: 2px; }
         
         .actions {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             justify-content: center;
-            margin-top: 20px;
+            margin-top: 12px;
         }
         
         button {
-            padding: 15px 30px;
-            font-size: 16px;
+            padding: 12px 20px;
+            font-size: 14px;
             border: none;
-            border-radius: 25px;
+            border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
+            transition: transform 0.2s;
         }
+        
+        button:active { transform: scale(0.95); }
         
         .btn-merge {
             background: linear-gradient(135deg, #00ff88, #00b4db);
@@ -126,19 +130,46 @@
             color: #fff;
         }
         
-        .log {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 15px;
-            background: rgba(0,0,0,0.3);
+        .tips {
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 11px;
+            margin-top: 10px;
+        }
+        
+        .progress {
+            background: rgba(255,255,255,0.1);
             border-radius: 10px;
-            color: rgba(255,255,255,0.7);
-            font-size: 12px;
-            max-height: 100px;
+            height: 15px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #00ff88, #00b4db);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+        
+        .log {
+            max-width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            font-size: 11px;
+            max-height: 60px;
             overflow-y: auto;
         }
         
-        .log-item { margin-bottom: 5px; }
+        .log-item { margin-bottom: 4px; }
         .log-item.gold { color: #ffd700; }
         .log-item.merge { color: #00ff88; }
     </style>
@@ -159,17 +190,22 @@
     
     <div class="heroes-grid" id="grid"></div>
     
+    <div class="progress">
+        <div class="progress-fill" id="mergeProgress" style="width: 0%">0/10</div>
+    </div>
+    
     <div class="heroes-row" id="召唤s"></div>
     
     <div class="actions">
-        <button class="btn召唤" onclick="召唤()">🎰 召唤英雄 (100金币)</button>
+        <button class="btn召唤" onclick="召唤()">🎰 召唤 (100💰)</button>
         <button class="btn-merge" onclick="合成()">✨ 合成升级</button>
     </div>
+    
+    <div class="tips" id="tips">选择英雄后点击合成，需要10个相同英雄</div>
     
     <div class="log" id="log"></div>
     
     <script>
-        // 英雄配置
         const HEROES = [
             { name: 'N', icon: '🧑', color: '#888', exp: 10 },
             { name: 'R', icon: '💂', color: '#4CAF50', exp: 30 },
@@ -179,14 +215,26 @@
             { name: '神', icon: '🌟', color: '#ff4444', exp: 3000 }
         ];
         
-        let gold = 1000;
-        let exp = 0;
-        let heroes = [0, 0, 0, 0, 0, 0]; // 各等级英雄数量
+        let gold = parseInt(localStorage.getItem('heroGold') || '1000');
+        let exp = parseInt(localStorage.getItem('heroExp') || '0');
+        let heroes = JSON.parse(localStorage.getItem('heroCounts') || '[0,0,0,0,0,0]');
         let selectedHero = null;
+        
+        function save() {
+            localStorage.setItem('heroGold', gold);
+            localStorage.setItem('heroExp', exp);
+            localStorage.setItem('heroCounts', JSON.stringify(heroes));
+        }
+        
+        function formatExp(num) {
+            if (num >= 10000) return (num / 10000).toFixed(1) + 'w';
+            return num.toLocaleString();
+        }
         
         function init() {
             renderGrid();
             render召唤s();
+            updateTips();
             log('欢迎来到英雄合成世界！召唤英雄，10个相同英雄可合成更高级！');
         }
         
@@ -197,7 +245,7 @@
             HEROES.forEach((hero, i) => {
                 const div = document.createElement('div');
                 div.className = 'hero-slot' + (selectedHero === i ? ' selected' : '');
-                if (heroes[i] === 0) div.classList += ' locked';
+                if (heroes[i] === 0) div.className += ' locked';
                 
                 div.innerHTML = `
                     <div class="hero-icon">${hero.icon}</div>
@@ -208,6 +256,15 @@
                 div.onclick = () => selectHero(i);
                 grid.appendChild(div);
             });
+            
+            document.getElementById('gold').textContent = gold.toLocaleString();
+            document.getElementById('exp').textContent = formatExp(exp);
+            
+            // Update progress
+            const progress = selectedHero !== null ? heroes[selectedHero] : 0;
+            const progressEl = document.getElementById('mergeProgress');
+            progressEl.style.width = (progress * 10) + '%';
+            progressEl.textContent = selectedHero !== null ? `${progress}/10` : '选择英雄';
         }
         
         function render召唤s() {
@@ -227,10 +284,23 @@
         }
         
         function selectHero(index) {
-            if (heroes[index] > 0) {
+            if (heroes[index] > 0 || index < 4) {
                 selectedHero = index;
                 renderGrid();
                 render召唤s();
+                updateTips();
+            }
+        }
+        
+        function updateTips() {
+            const tips = document.getElementById('tips');
+            if (selectedHero === null) {
+                tips.textContent = '选择英雄后点击合成，需要10个相同英雄';
+            } else if (selectedHero >= HEROES.length - 1) {
+                tips.textContent = '🎉 已达最高等级！';
+            } else {
+                const need = 10 - heroes[selectedHero];
+                tips.textContent = `还差 ${need} 个${HEROES[selectedHero].name}英雄可合成${HEROES[selectedHero + 1].icon}`;
             }
         }
         
@@ -240,6 +310,7 @@
             item.className = 'log-item ' + type;
             item.textContent = msg;
             logDiv.prepend(item);
+            if (logDiv.children.length > 8) logDiv.lastChild.remove();
         }
         
         function 召唤() {
@@ -249,27 +320,26 @@
             }
             
             gold -= 100;
-            document.getElementById('gold').textContent = gold;
+            document.getElementById('gold').textContent = gold.toLocaleString();
             
-            // 随机召唤
             const r = Math.random();
             let level;
-            if (r < 0.5) level = 0;      // 50% N
-            else if (r < 0.8) level = 1; // 30% R
-            else if (r < 0.95) level = 2; // 15% SR
-            else if (r < 0.99) level = 3; // 4% SSR
-            else level = 4;                  // 1% UR
+            if (r < 0.5) level = 0;
+            else if (r < 0.8) level = 1;
+            else if (r < 0.95) level = 2;
+            else if (r < 0.99) level = 3;
+            else level = 4;
             
             heroes[level]++;
             exp += HEROES[level].exp;
-            document.getElementById('exp').textContent = exp;
             
-            log(`召唤获得 ${HEROES[level].icon} ${HEROES[level].name}！`, 'merge');
+            log(`召唤获得 ${HEROES[level].icon} ${HEROES[level].name}！+${HEROES[level].exp}经验`, 'merge');
             
-            // 自动选中
             selectedHero = level;
+            save();
             renderGrid();
             render召唤s();
+            updateTips();
         }
         
         function 合成() {
@@ -288,19 +358,19 @@
                 return;
             }
             
-            // 合成！
             heroes[selectedHero] -= 10;
             heroes[selectedHero + 1]++;
             
             const expGain = HEROES[selectedHero + 1].exp * 10;
             exp += expGain;
-            document.getElementById('exp').textContent = exp;
             
-            log(`🎉 ${HEROES[selectedHero].name} ×10 合成 ${HEROES[selectedHero + 1].icon} ${HEROES[selectedHero + 1].name}！`, 'merge');
+            log(`🎉 ${HEROES[selectedHero].name}×10 合成 ${HEROES[selectedHero + 1].icon} ${HEROES[selectedHero + 1].name}！+${expGain}经验`, 'merge');
             
             selectedHero = selectedHero + 1;
+            save();
             renderGrid();
             render召唤s();
+            updateTips();
         }
         
         init();

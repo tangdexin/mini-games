@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#00b4db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="习惯打卡">
+    <title>习惯打卡</title>
+    <link rel="manifest" href="/mini-games/habit-tracker/manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --primary: #00b4db;
+            --primary-dark: #0083b0;
+            --bg: #f5f7fa;
+            --bg-dark: #1a1a2e;
+            --card: #fff;
+            --card-dark: #16213e;
+            --text: #333;
+            --text-dark: #fff;
+            --text-light: #888;
+            --success: #00ff88;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            transition: all 0.3s;
+        }
+        
+        body.dark {
+            background: var(--bg-dark);
+        }
+        
+        .app {
+            max-width: 480px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: #fff;
+            padding: 20px;
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 { font-size: 24px; }
+        
+        .theme-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        .stats { display: flex; gap: 10px; }
+        
+        .stat-card {
+            flex: 1;
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value { font-size: 24px; font-weight: bold; }
+        .stat-label { font-size: 12px; opacity: 0.8; }
+        
+        .content { padding: 20px; padding-bottom: 80px; }
+        
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .section-title h2 { color: var(--text); font-size: 18px; }
+        body.dark .section-title h2 { color: var(--text-dark); }
+        
+        .add-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .habit-list { display: flex; flex-direction: column; gap: 12px; }
+        
+        .habit-card {
+            background: var(--card);
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        body.dark .habit-card { background: var(--card-dark); }
+        
+        .habit-check {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid #ddd;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .habit-check.checked {
+            background: var(--success);
+            border-color: var(--success);
+        }
+        
+        .habit-info { flex: 1; }
+        
+        .habit-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+        body.dark .habit-name { color: var(--text-dark); }
+        
+        .habit-streak { font-size: 12px; color: var(--primary); }
+        
+        .habit-actions { display: flex; gap: 8px; }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.5;
+            padding: 5px;
+        }
+        
+        .action-btn:hover { opacity: 1; }
+        
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card);
+            display: flex;
+            padding: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        body.dark .tab-bar { background: var(--card-dark); }
+        
+        .tab-item {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            color: var(--text-light);
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .tab-item.active { color: var(--primary); }
+        .tab-icon { font-size: 24px; display: block; margin-bottom: 2px; }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        .modal.show { display: flex; }
+        
+        .modal-content {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+        }
+        body.dark .modal-content { background: var(--card-dark); }
+        
+        .modal h3 { color: var(--text); margin-bottom: 20px; }
+        body.dark .modal h3 { color: var(--text-dark); }
+        
+        .form-group { margin-bottom: 15px; }
+        
+        .form-group label {
+            display: block;
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--bg);
+            color: var(--text);
+        }
+        
+        .icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        
+        .icon-option {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid #ddd;
+            background: var(--bg);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .icon-option.selected { border-color: var(--primary); background: rgba(0,180,219,0.1); }
+        
+        .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        
+        .modal-btn.cancel { background: #eee; color: #666; }
+        .modal-btn.save { background: var(--primary); color: #fff; }
+        
+        .stats-view { display: none; }
+        .stats-view.active { display: block; }
+        
+        .calendar {
+            background: var(--card);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        body.dark .calendar { background: var(--card-dark); }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .calendar-title { font-weight: bold; color: var(--text); }
+        body.dark .calendar-title { color: var(--text-dark); }
+        
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        .calendar-day.has-data { background: var(--success); color: #fff; }
+        .calendar-day.today { border: 2px solid var(--primary); }
+        .weekday { font-size: 11px; color: var(--text-light); }
+        
+        .chart { background: var(--card); border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        body.dark .chart { background: var(--card-dark); }
+        
+        .chart-title { font-weight: bold; color: var(--text); margin-bottom: 15px; }
+        body.dark .chart-title { color: var(--text-dark); }
+        
+        .bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+        
+        .bar { flex: 1; background: var(--primary); border-radius: 3px 3px 0 0; min-height: 5px; }
+        
+        .empty { text-align: center; padding: 40px; color: var(--text-light); }
+        .empty-icon { font-size: 50px; margin-bottom: 15px; }
+        
+        .install-banner {
+            display: none;
+            background: var(--primary);
+            color: #fff;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .install-banner.show { display: block; }
+        
+        .install-banner button {
+            background: #fff;
+            color: var(--primary);
+            border: none;
+            padding: 5px 15px;
+            border-radius: 15px;
+            margin-left: 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        /* PWA Install Button */
+        .pwa-install {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,180,219,0.4);
+            display: none;
+            z-index: 50;
+        }
+        
+        .pwa-install.show { display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <!-- PWA安装提示 -->
+    <div class="install-banner" id="installBanner">
+        📱 点击右上角「...」添加到主屏幕，可像APP一样使用
+        <button onclick="dismissInstall()">知道了</button>
+    </div>
+    
+    <button class="pwa-install" id="pwaInstallBtn" onclick="installPWA()">⬇️</button>
+
+    <div class="app">
+        <div class="header">
+            <div class="header-top">
+                <h1>✅ 习惯打卡</h1>
+                <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+            </div>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="todayCount">0</div>
+                    <div class="stat-label">今日完成</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">总习惯数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="streakCount">0</div>
+                    <div class="stat-label">最长连续</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="section-title">
+                <h2>📝 今日打卡</h2>
+                <button class="add-btn" onclick="showAddModal()">+ 添加</button>
+            </div>
+            <div class="habit-list" id="habitList"></div>
+        </div>
+        
+        <div class="content stats-view" id="statsView">
+            <div class="section-title">
+                <h2>📊 本月统计</h2>
+            </div>
+            <div class="calendar">
+                <div class="calendar-header">
+                    <span class="calendar-title" id="calendarTitle">2026年3月</span>
+                    <div>
+                        <button onclick="changeMonth(-1)" style="border:none;background:none;">◀️</button>
+                        <button onclick="changeMonth(1)" style="border:none;background:none;">▶️</button>
+                    </div>
+                </div>
+                <div class="calendar-grid">
+                    <div class="weekday">日</div>
+                    <div class="weekday">一</div>
+                    <div class="weekday">二</div>
+                    <div class="weekday">三</div>
+                    <div class="weekday">四</div>
+                    <div class="weekday">五</div>
+                    <div class="weekday">六</div>
+                </div>
+                <div class="calendar-grid" id="calendarDays"></div>
+            </div>
+            
+            <div class="chart">
+                <div class="chart-title">📈 完成趋势（近7天）</div>
+                <div class="bar-chart" id="trendChart"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tab-bar">
+        <div class="tab-item active" onclick="switchTab('home')">
+            <span class="tab-icon">📝</span>
+            打卡
+        </div>
+        <div class="tab-item" onclick="switchTab('stats')">
+            <span class="tab-icon">📊</span>
+            统计
+        </div>
+    </div>
+    
+    <div class="modal" id="habitModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">添加习惯</h3>
+            <div class="form-group">
+                <label>习惯名称</label>
+                <input type="text" id="habitName" placeholder="如：每天喝牛奶">
+            </div>
+            <div class="form-group">
+                <label>选择图标</label>
+                <div class="icon-grid" id="iconGrid"></div>
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn cancel" onclick="closeModal()">取消</button>
+                <button class="modal-btn save" onclick="saveHabit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/mini-games/habit-tracker/sw.js').then(() => {
+                console.log('Service Worker 注册成功');
+            });
+        }
+        
+        // PWA Install
+        let deferredPrompt;
+        const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+        const installBanner = document.getElementById('installBanner');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            pwaInstallBtn.classList.add('show');
+            
+            // 显示横幅
+            if (!localStorage.getItem('installDismissed')) {
+                installBanner.classList.add('show');
+            }
+        });
+        
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((result) => {
+                    deferredPrompt = null;
+                    pwaInstallBtn.classList.remove('show');
+                });
+            }
+        }
+        
+        function dismissInstall() {
+            installBanner.classList.remove('show');
+            localStorage.setItem('installDismissed', 'true');
+        }
+        
+        // 数据存储
+        const ICONS = ['☀️','🏃','📚','💪','🥛','💤','🧘','💊','🎯','✍️','🎨','🎵','💧','🥗','🚶','🧹'];
+        
+        let habits = JSON.parse(localStorage.getItem('habits') || '[]');
+        let records = JSON.parse(localStorage.getItem('records') || '{}');
+        let currentMonth = new Date();
+        let editingId = null;
+        
+        function init() {
+            renderIcons();
+            renderHabits();
+            updateStats();
+            renderCalendar();
+            renderTrend();
+            loadTheme();
+        }
+        
+        function loadTheme() {
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark');
+            }
+        }
+        
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+        }
+        
+        function renderIcons() {
+            const grid = document.getElementById('iconGrid');
+            grid.innerHTML = ICONS.map((icon, i) => 
+                `<div class="icon-option ${i === 0 ? 'selected' : ''}" data-icon="${icon}" onclick="selectIcon(this)">${icon}</div>`
+            ).join('');
+        }
+        
+        function selectIcon(el) {
+            document.querySelectorAll('.icon-option').forEach(e => e.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+        
+        function renderHabits() {
+            const list = document.getElementById('habitList');
+            const today = getToday();
+            
+            if (habits.length === 0) {
+                list.innerHTML = `<div class="empty"><div class="empty-icon">📝</div><p>还没有习惯，开始添加吧！</p></div>`;
+                return;
+            }
+            
+            list.innerHTML = habits.map(habit => {
+                const isChecked = records[today]?.includes(habit.id);
+                const streak = getStreak(habit.id);
+                return `
+                    <div class="habit-card">
+                        <div class="habit-check ${isChecked ? 'checked' : ''}" onclick="toggleHabit(${habit.id})">
+                            ${isChecked ? '✓' : ''}
+                        </div>
+                        <div class="habit-info">
+                            <div class="habit-name">${habit.icon} ${habit.name}</div>
+                            <div class="habit-streak">🔥 连续 ${streak} 天</div>
+                        </div>
+                        <div class="habit-actions">
+                            <button class="action-btn" onclick="editHabit(${habit.id})">✏️</button>
+                            <button class="action-btn" onclick="deleteHabit(${habit.id})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function toggleHabit(id) {
+            const today = getToday();
+            if (!records[today]) records[today] = [];
+            
+            const idx = records[today].indexOf(id);
+            if (idx > -1) {
+                records[today].splice(idx, 1);
+            } else {
+                records[today].push(id);
+            }
+            
+            saveData();
+            renderHabits();
+            updateStats();
+            renderCalendar();
+            renderTrend();
+        }
+        
+        function getStreak(habitId) {
+            let streak = 0;
+            const today = new Date();
+            
+            for (let i = 0; i < 365; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const key = formatDate(date);
+                
+                if (records[key]?.includes(habitId)) {
+                    streak++;
+                } else if (i > 0) {
+                    break;
+                }
+            }
+            return streak;
+        }
+        
+        function updateStats() {
+            const today = getToday();
+            const todayData = records[today] || [];
+            
+            document.getElementById('todayCount').textContent = todayData.length;
+            document.getElementById('totalCount').textContent = habits.length;
+            
+            let maxStreak = 0;
+            habits.forEach(h => {
+                const s = getStreak(h.id);
+                if (s > maxStreak) maxStreak = s;
+            });
+            document.getElementById('streakCount').textContent = maxStreak;
+        }
+        
+        function renderCalendar() {
+            const title = document.getElementById('calendarTitle');
+            const days = document.getElementById('calendarDays');
+            
+            const year = currentMonth.getFullYear();
+            const month = currentMonth.getMonth();
+            
+            title.textContent = `${year}年${month + 1}月`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
+            const todayStr = formatDate(today);
+            
+            let html = '';
+            
+            for (let i = 0; i < firstDay; i++) {
+                html += '<div class="calendar-day"></div>';
+            }
+            
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
+                const key = formatDate(date);
+                const hasData = records[key]?.length > 0;
+                const isToday = key === todayStr;
+                
+                html += `<div class="calendar-day ${hasData ? 'has-data' : ''} ${isToday ? 'today' : ''}">${d}</div>`;
+            }
+            
+            days.innerHTML = html;
+        }
+        
+        function changeMonth(delta) {
+            currentMonth.setMonth(currentMonth.getMonth() + delta);
+            renderCalendar();
+        }
+        
+        function renderTrend() {
+            const chart = document.getElementById('trendChart');
+            const data = [];
+            
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const key = formatDate(date);
+                const count = records[key]?.length || 0;
+                data.push(count);
+            }
+            
+            const max = Math.max(...data, 1);
+            
+            chart.innerHTML = data.map(d => 
+                `<div class="bar" style="height: ${(d / max) * 100}%"></div>`
+            ).join('');
+        }
+        
+        function showAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = '添加习惯';
+            document.getElementById('habitName').value = '';
+            renderIcons();
+            document.getElementById('habitModal').classList.add('show');
+        }
+        
+        function editHabit(id) {
+            const habit = habits.find(h => h.id === id);
+            if (!habit) return;
+            
+            editingId = id;
+            document.getElementById('modalTitle').textContent = '编辑习惯';
+            document.getElementById('habitName').value = habit.name;
+            
+            renderIcons();
+            document.querySelectorAll('.icon-option').forEach(el => {
+                if (el.dataset.icon === habit.icon) {
+                    el.classList.add('selected');
+                }
+            });
+            
+            document.getElementById('habitModal').classList.add('show');
+        }
+        
+        function closeModal() {
+            document.getElementById('habitModal').classList.remove('show');
+        }
+        
+        function saveHabit() {
+            const name = document.getElementById('habitName').value.trim();
+            if (!name) return;
+            
+            const iconEl = document.querySelector('.icon-option.selected');
+            const icon = iconEl ? iconEl.dataset.icon : '✓';
+            
+            if (editingId) {
+                const habit = habits.find(h => h.id === editingId);
+                if (habit) {
+                    habit.name = name;
+                    habit.icon = icon;
+                }
+            } else {
+                habits.push({
+                    id: Date.now(),
+                    name: name,
+                    icon: icon,
+                    createdAt: getToday()
+                });
+            }
+            
+            saveData();
+            renderHabits();
+            updateStats();
+            closeModal();
+        }
+        
+        function deleteHabit(id) {
+            if (!confirm('确定删除这个习惯吗？')) return;
+            habits = habits.filter(h => h.id !== id);
+            saveData();
+            renderHabits();
+            updateStats();
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-item').forEach(e => e.classList.remove('active'));
+            event.target.closest('.tab-item').classList.add('active');
+            
+            document.querySelector('.content:not(.stats-view)').style.display = 'block';
+            document.getElementById('statsView').classList.remove('active');
+            
+            if (tab === 'home') {
+                document.querySelector('.content:not(.stats-view)').style.display = 'block';
+            } else if (tab === 'stats') {
+                document.getElementById('statsView').classList.add('active');
+                renderCalendar();
+                renderTrend();
+            }
+        }
+        
+        function getToday() { return formatDate(new Date()); }
+        
+        function formatDate(date) {
+            return date.toISOString().split('T')[0];
+        }
+        
+        function saveData() {
+            localStorage.setItem('habits', JSON.stringify(habits));
+            localStorage.setItem('records', JSON.stringify(records));
+        }
+        
+        init();
+    </script>
+</body>
+</html>
